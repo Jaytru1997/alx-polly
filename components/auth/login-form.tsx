@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -15,18 +16,26 @@ export function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+
+  async function signInWithEmail(email: string, password: string) {
+    const { supabaseClient } = await import("@/lib/supabase/client");
+    return await supabaseClient.auth.signInWithPassword({ email, password });
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-
-    // TODO: Implement actual login logic
-    console.log("Login attempt:", { email, password });
-
-    // Simulate API call
-    setTimeout(() => {
+    setError(null);
+    const { error } = await signInWithEmail(email, password);
+    if (error) {
+      setError(error.message);
       setIsLoading(false);
-    }, 1000);
+      return;
+    }
+    setIsLoading(false);
+    router.replace("/dashboard");
   };
 
   return (
@@ -39,6 +48,11 @@ export function LoginForm() {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded p-2">
+              {error}
+            </div>
+          )}
           <div className="space-y-2">
             <label htmlFor="email" className="text-sm font-medium">
               Email

@@ -17,10 +17,34 @@ export function RegisterForm() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  async function signUpWithEmail(
+    email: string,
+    password: string,
+    name: string
+  ) {
+    const { supabaseClient } = await import("@/lib/supabase/client");
+    const { data, error } = await supabaseClient.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { name },
+        emailRedirectTo:
+          typeof window !== "undefined"
+            ? `${window.location.origin}/auth/callback`
+            : undefined,
+      },
+    });
+    return { data, error };
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError(null);
+    setSuccess(null);
 
     if (password !== confirmPassword) {
       alert("Passwords don't match");
@@ -28,13 +52,14 @@ export function RegisterForm() {
       return;
     }
 
-    // TODO: Implement actual registration logic
-    console.log("Registration attempt:", { name, email, password });
-
-    // Simulate API call
-    setTimeout(() => {
+    const { error } = await signUpWithEmail(email, password, name);
+    if (error) {
+      setError(error.message);
       setIsLoading(false);
-    }, 1000);
+      return;
+    }
+    setSuccess("Check your email to confirm your account.");
+    setIsLoading(false);
   };
 
   return (
@@ -47,6 +72,16 @@ export function RegisterForm() {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded p-2">
+              {error}
+            </div>
+          )}
+          {success && (
+            <div className="text-sm text-green-700 bg-green-50 border border-green-200 rounded p-2">
+              {success}
+            </div>
+          )}
           <div className="space-y-2">
             <label htmlFor="name" className="text-sm font-medium">
               Full Name

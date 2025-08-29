@@ -1,6 +1,24 @@
 import { RegisterForm } from "@/components/auth/register-form";
+import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
+import { createClient } from "@supabase/supabase-js";
 
-export default function RegisterPage() {
+async function getSession() {
+  const cookieStore = cookies();
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL as string,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string,
+    {
+      global: { headers: { Cookie: cookieStore.toString() } },
+    }
+  );
+  const { data } = await supabase.auth.getSession();
+  return data.session;
+}
+
+export default async function RegisterPage() {
+  const session = await getSession();
+  if (session) redirect("/dashboard");
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-md mx-auto">

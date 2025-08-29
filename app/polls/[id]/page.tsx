@@ -30,7 +30,7 @@ const mockPoll: Poll = {
   updatedAt: new Date("2024-01-15"),
 };
 
-export default function PollDetailPage({ params }: { params: { id: string } }) {
+export default function PollDetailPage() {
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [hasVoted, setHasVoted] = useState(false);
   const [poll, setPoll] = useState<Poll>(mockPoll);
