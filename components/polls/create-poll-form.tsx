@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -17,6 +18,9 @@ export function CreatePollForm() {
   const [description, setDescription] = useState("");
   const [options, setOptions] = useState(["", ""]);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  const [allowAnonymous, setAllowAnonymous] = useState(false);
 
   const addOption = () => {
     setOptions([...options, ""]);
@@ -37,6 +41,7 @@ export function CreatePollForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError(null);
 
     const validOptions = options.filter((option) => option.trim() !== "");
 
@@ -46,18 +51,24 @@ export function CreatePollForm() {
       return;
     }
 
-    // TODO: Implement actual poll creation logic
-    console.log("Creating poll:", {
-      title,
-      description,
-      options: validOptions,
-    });
-
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      const fd = new FormData();
+      fd.append("title", title);
+      fd.append("description", description);
+      fd.append("allowAnonymous", String(allowAnonymous));
+      validOptions.forEach((opt) => fd.append("options", opt));
+      const { createPollAction } = await import("@/app/polls/create/actions");
+      const res = await createPollAction(fd);
+      if (res && !res.ok) {
+        setError(res.error || "Failed to create poll");
+        setIsLoading(false);
+        return;
+      }
+      // If res is undefined, the server action performed a redirect
+    } catch (err: any) {
+      setError(err?.message || "Something went wrong");
       setIsLoading(false);
-      // TODO: Redirect to the new poll or show success message
-    }, 1000);
+    }
   };
 
   return (
@@ -70,6 +81,11 @@ export function CreatePollForm() {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
+          {error && (
+            <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded p-2">
+              {error}
+            </div>
+          )}
           <div className="space-y-2">
             <label htmlFor="title" className="text-sm font-medium">
               Poll Title *
@@ -128,6 +144,19 @@ export function CreatePollForm() {
               <Plus className="h-4 w-4 mr-2" />
               Add Option
             </Button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input
+              id="allowAnonymous"
+              type="checkbox"
+              checked={allowAnonymous}
+              onChange={(e) => setAllowAnonymous(e.target.checked)}
+              className="h-4 w-4"
+            />
+            <label htmlFor="allowAnonymous" className="text-sm">
+              Allow anonymous voting
+            </label>
           </div>
 
           <Button type="submit" className="w-full" disabled={isLoading}>
