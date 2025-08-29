@@ -1,0 +1,52 @@
+# Cursor Rules for Polling App (Next.js + Supabase)
+
+project: Polling App
+description: >
+  A full-stack polling application built with Next.js (App Router) on Vercel
+  and Supabase for database, authentication, and realtime updates.
+  Features: poll creation, voting (with live updates), QR sharing, user auth.
+
+stack:
+  frontend:
+    - Next.js 14+ with App Router
+    - Server Components by default
+    - TailwindCSS + shadcn/ui for styling
+    - SWR for lightweight data fetching
+    - Recharts for charts
+  backend:
+    - Supabase (Postgres + RLS + Realtime + Storage)
+    - Supabase Auth (magic links + OAuth)
+    - Supabase RPC functions for secure voting
+  deployment:
+    - Next.js on Vercel
+    - Supabase project for DB/Auth/Realtime
+
+structure:
+
+- /app → routes (marketing, dashboard, polls, api)
+- /components → reusable UI (PollForm, VotePanel, ResultsChart)
+- /lib → supabase clients, auth helpers, utils
+
+rules:
+
+- Default to **Server Components**. Use Client Components only for interactive widgets (forms, live results, voting panel).
+- All mutations (create poll, vote, close poll) go through **Server Actions** or **Supabase RPCs**.
+- Never insert directly into `votes`; always call `cast_vote` RPC.
+- Validate inputs with **zod** before database calls.
+- Always import Supabase clients from `/lib` (`server.ts` for server, `client.ts` for browser).
+- For QR codes, add a **route handler** at `/app/api/qrcode/route.ts` and return PNG/SVG with cache headers.
+- For realtime results, subscribe to `votes` filtered by `poll_id`. Trigger a refetch of aggregated results.
+- Use **shadcn/ui** components + Tailwind for consistent UI; avoid inline styles.
+- Use clear naming: `page.tsx` for routes, `route.ts` for handlers, `actions.ts` for server actions.
+
+security:
+
+- Enable Supabase RLS on all tables.
+- Enforce one vote per user or token using unique constraints and RPC logic.
+- Require Supabase Auth for creating/managing polls.
+- Allow anonymous voting only if `poll.allow_anonymous = true`.
+- Apply rate-limiting on API routes (`votes`, `qrcode`) with Upstash Redis or Supabase rate_limit extension.
+
+workflow:
+  dev:
+    - Start Next.js with `npm run dev`.
