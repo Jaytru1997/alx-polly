@@ -1,19 +1,19 @@
 # PollApp - Next.js Polling Application
 
-A modern, full-stack polling application built with Next.js 15, TypeScript, and Tailwind CSS. PollApp allows users to create polls, vote on them, and view real-time results.
+A modern, full-stack polling application built with Next.js 15 (App Router), TypeScript, Tailwind CSS, and Supabase Auth. PollApp allows users to create polls, vote on them, and view results.
 
 ## 🚀 Features
 
-- **User Authentication**: Sign up, sign in, and manage user accounts
+- **User Authentication (Supabase)**: Email/password signup and login
 - **Create Polls**: Build custom polls with multiple options and descriptions
 - **Vote on Polls**: Participate in polls created by the community
-- **Real-time Results**: See poll results update instantly with beautiful visualizations
+- **Protected Routes**: Secure pages like dashboard and create poll
 - **Responsive Design**: Modern UI that works on all devices
 - **Dashboard**: Personal dashboard to manage your polls and view statistics
 
 ## 🏗️ Project Structure
 
-```
+```text
 alx-polly/
 ├── app/                          # Next.js app directory
 │   ├── auth/                     # Authentication pages
@@ -23,7 +23,7 @@ alx-polly/
 │   │   ├── create/              # Create new poll page
 │   │   ├── [id]/                # Individual poll detail page
 │   │   └── page.tsx             # Browse all polls page
-│   ├── dashboard/                # User dashboard page
+│   ├── dashboard/               # User dashboard page (protected)
 │   ├── globals.css              # Global styles
 │   ├── layout.tsx               # Root layout with header/footer
 │   └── page.tsx                 # Homepage
@@ -33,8 +33,10 @@ alx-polly/
 │   │   ├── input.tsx           # Input component
 │   │   └── card.tsx            # Card components
 │   ├── auth/                    # Authentication components
-│   │   ├── login-form.tsx      # Login form
-│   │   └── register-form.tsx   # Registration form
+│   │   ├── auth-provider.tsx   # Auth context provider (Supabase session)
+│   │   ├── protected-route.tsx # Client wrapper for protected pages
+│   │   ├── login-form.tsx      # Login form (email/password)
+│   │   └── register-form.tsx   # Registration form (email/password)
 │   ├── polls/                   # Poll-related components
 │   │   ├── poll-card.tsx       # Poll display card
 │   │   └── create-poll-form.tsx # Poll creation form
@@ -44,6 +46,8 @@ alx-polly/
 ├── lib/                         # Utility libraries
 │   ├── types/                   # TypeScript type definitions
 │   │   └── index.ts            # Poll, User, and related types
+│   ├── supabase/                # Supabase client utilities
+│   │   └── client.ts           # Browser Supabase client
 │   └── utils.ts                # Utility functions
 ├── public/                      # Static assets
 ├── package.json                 # Dependencies and scripts
@@ -58,8 +62,29 @@ alx-polly/
 - **Styling**: Tailwind CSS
 - **UI Components**: Shadcn UI
 - **Icons**: Lucide React
-- **State Management**: React hooks (useState, useEffect)
+- **Auth**: Supabase Auth (`@supabase/supabase-js`)
+- **State Management**: React hooks + Context (AuthProvider)
 - **Routing**: Next.js built-in routing
+
+## 🔐 Authentication (Supabase)
+
+This project uses Supabase for authentication. The app initializes a browser client and provides session/user state via an `AuthProvider`. Sensitive routes are gated using a `ProtectedRoute` client component, and auth pages perform server-side redirects if a session exists.
+
+- `lib/supabase/client.ts`: Creates the Supabase browser client.
+- `components/auth/auth-provider.tsx`: Manages session via `supabase.auth.getSession()` and `onAuthStateChange`.
+- `components/auth/protected-route.tsx`: Redirects unauthenticated users to `/auth/login`.
+- `app/auth/login/page.tsx` and `app/auth/register/page.tsx`: Redirect to `/dashboard` if already authenticated (server components).
+
+### Environment Variables
+
+Create a `.env.local` in the project root with:
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+You can find these in your Supabase project's Settings → API.
 
 ## 📦 Installation
 
@@ -70,27 +95,38 @@ git clone <repository-url>
 cd alx-polly
 ```
 
-2. Install dependencies:
+1. Install dependencies:
 
 ```bash
 npm install
 ```
 
-3. Run the development server:
+1. Configure environment variables:
+
+Create `.env.local` with your Supabase keys (see above).
+
+1. Run the development server:
 
 ```bash
 npm run dev
 ```
 
-4. Open [http://localhost:3000](http://localhost:3000) in your browser.
+1. Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## ▶️ Usage
+
+- Visit `/auth/register` to create an account, or `/auth/login` to sign in.
+- After login, you'll be redirected to `/dashboard`.
+- Protected pages include `/dashboard` and `/polls/create`.
 
 ## 🎯 Key Components
 
 ### Authentication System
 
-- **LoginForm**: User sign-in with email and password
-- **RegisterForm**: User registration with name, email, and password
-- **Header**: Navigation with authentication status
+- `LoginForm`: Email/password sign-in using Supabase
+- `RegisterForm`: Email/password signup; stores `name` in user metadata
+- `AuthProvider`: Context with `user`, `isLoading`, and `signOut()`
+- `ProtectedRoute`: Client wrapper to guard pages
 
 ### Poll Management
 
@@ -121,12 +157,12 @@ npm run dev
 
 ### State Management
 
-- Use React hooks for local component state
-- TODO: Implement global state management (Context API or Zustand) for user authentication
+- Local component state with hooks
+- Global auth state via Context API (`AuthProvider`)
 
 ## 🚧 TODO / Upcoming Features
 
-- [ ] Implement actual authentication backend
+- [ ] Persist polls to a database (e.g., Supabase/Postgres)
 - [ ] Add database integration (Prisma + PostgreSQL)
 - [ ] Real-time updates with WebSockets
 - [ ] Poll sharing and social features
